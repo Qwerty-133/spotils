@@ -9,3 +9,4 @@ ignore = T000,  # Todo note found.
          D203,  # 1 blank line required before class docstring
          ANN401,  # Missing return type annotation for public function
          W503,  # line break before binary operator
+         P103,  # other string does contain unindexed parameters

@@ -11,10 +11,14 @@ from spotils.helpers.logging import InterceptHandler
 dotenv.load_dotenv()
 
 SCOPES = [
+    "playlist-read-private",
+    "playlist-read-collaborative",
+    "playlist-modify-private",
+    "playlist-modify-public",
     "user-library-read",
     "user-modify-playback-state",
     "user-read-playback-state",
-    "user-read-recently-played"
+    "user-read-recently-played",
 ]
 
 scopes = ",".join(SCOPES)

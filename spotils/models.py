@@ -121,6 +121,14 @@ class Model:
             self._load_field_value(field, data)
 
 
+class PagedModel(Model):
+    """Models that have a next page are considered paged."""
+
+    __slots__ = ()
+
+    next: t.Optional[str]
+
+
 model_dataclass = dataclasses.dataclass(
     slots=True,
     eq=True,
@@ -209,3 +217,35 @@ class RecentlyPlayed(Model):
     """Abstracts recently played information returned by the API."""
 
     items: tuple[PlayedItem]
+
+
+@model_dataclass
+class SavedItem(Model):
+    """Abstracts saved items returned by the API."""
+
+    track: Track
+
+
+@model_dataclass
+class SavedTracks(PagedModel):
+    """Abstracts saved tracks returned by the API."""
+
+    next: t.Optional[str]
+    items: tuple[SavedItem]
+    total: int
+
+
+@model_dataclass
+class PlaylistItem(Model):
+    """Abstracts playlist items returned by the API."""
+
+    track: Track
+
+
+@model_dataclass
+class PlaylistTracks(PagedModel):
+    """Abstracts playlist tracks returned by the API."""
+
+    next: t.Optional[str]
+    items: tuple[PlaylistItem]
+    total: int
