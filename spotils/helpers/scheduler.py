@@ -27,6 +27,7 @@ def loop_task(
     scheduler = Scheduler()
     seconds = parse_interval(interval)
     scheduler.every(seconds).seconds.do(callback, *args)
+    scheduler.run_all()
 
     while True:
         scheduler.run_pending()
