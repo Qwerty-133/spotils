@@ -1,0 +1,27 @@
+name: Build & Publish
+
+
+on:
+  release:
+    types: [published]
+
+
+permissions:
+  contents: read
+
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup
+
+      - name: Publish
+        run: >-
+          poetry publish --build --no-interaction
+          --username __token__
+          --password ${{ secrets.PYPI_TOKEN }}

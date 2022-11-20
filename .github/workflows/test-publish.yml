@@ -1,0 +1,30 @@
+name: Build & Publish to Test PyPI
+
+
+on: workflow_dispatch
+
+
+permissions:
+  contents: read
+
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup
+
+      - name: Configure TestPyPI URL
+        run: poetry config repositories.testpypi https://test.pypi.org/legacy/
+        shell: bash
+
+      - name: Publish
+        run: >-
+          poetry publish --build --no-interaction
+          --repository testpypi
+          --username __token__
+          --password ${{ secrets.TEST_PYPI_TOKEN }}

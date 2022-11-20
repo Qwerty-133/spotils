@@ -1,0 +1,53 @@
+name: Environment Setup
+description: Installs Python, Poetry, deps & Pre-commit
+
+
+permissions:
+  contents: read
+
+runs:
+  using: "composite"
+
+  steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      id: setup-python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Load cached Poetry installation
+      uses: actions/cache@v3
+      with:
+        path: ~/.local
+        key: -${{ steps.setup-python.outputs.python-version }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-in-project: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies if not cached
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+      shell: bash
+
+    - name: Load cached pre-commit
+      id: cached-pre-commit
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+    - name: Install pre-commit if not cached
+      if: steps.cached-pre-commit.outputs.cache-hit != 'true'
+      run: poetry run task install-precommit --install-hooks
+      shell: bash
