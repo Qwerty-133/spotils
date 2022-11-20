@@ -56,39 +56,91 @@ def schedule_task(
     return thread
 
 
+class LikedSongsSyncTick:
+    """
+    Manage full syncs and short syncs properly.
+
+    Short syncs shouldn't be run close to full syncs and if their
+    intervals coincidence, only the full sync should be run. To achieve
+    this behaviour, syncs run at "ticks".
+    """
+
+    def __init__(self) -> None:
+        self.syncer = LikedSongsSyncer()
+        self.required_long_ticks = self.get_required_long_ticks()
+        self.long_tick = self.required_long_ticks
+
+    @staticmethod
+    def get_required_long_ticks() -> int:
+        """
+        Calculate the number of ticks for the full sync interval.
+
+        The full sync interval is adjusted (rounded to the nearest)
+        to a multiple of the short sync interval. This is done so its
+        interval can be expressed as a tick.
+        """
+        short_seconds = parse_interval(
+            config.LikedSongsSync.short_sync_interval
+        )
+        long_seconds = parse_interval(config.LikedSongsSync.full_sync_interval)
+
+        required_decrement = long_seconds % short_seconds
+
+        lowest_multiple = long_seconds // short_seconds
+        upper_interval = lowest_multiple + short_seconds
+        required_increment = upper_interval - long_seconds
+
+        if required_decrement > required_decrement:
+            long_seconds += required_increment
+        else:
+            long_seconds -= required_decrement
+        return long_seconds // short_seconds
+
+    def handle_tick(self) -> None:
+        """
+        Handle what happens at a tick.
+
+        If the long tick limit is reached, a full sync is run.
+        Otherwise, a short sync is run.
+        """
+        if self.long_tick == self.required_long_ticks:
+            self.syncer.sync_playlist()
+            self.long_tick = 1
+            return
+
+        self.syncer.sync_playlist(limit=config.LikedSongsSync.short_sync_limit)
+        self.long_tick += 1
+
+
 def run_tasks() -> None:
     """
     Run the tasks specified by the config.
 
-    It blocks the current thread until all tasks finish.
+    Block the current thread indefinitely.
     """
-    task_threads = []
-
     if config.LikedSongsSync.enabled:
-        syncer = LikedSongsSyncer()
         if config.LikedSongsSync.short_sync_enabled:
-            thread = schedule_task(
-                "Liked Songs Syncer (short)",
-                config.LikedSongsSync.short_sync_interval,
-                syncer.sync_playlist,
-                config.LikedSongsSync.short_sync_limit,
-            )
-            task_threads.append(thread)
+            tick_syncer = LikedSongsSyncTick()
 
-        thread = schedule_task(
-            "Liked Songs Syncer (full)",
-            config.LikedSongsSync.full_sync_interval,
-            syncer.sync_playlist,
-        )
-        task_threads.append(thread)
+            schedule_task(
+                "Liked Songs Syncer",
+                config.LikedSongsSync.short_sync_interval,
+                tick_syncer.handle_tick,
+            )
+        else:
+            syncer = LikedSongsSyncer()
+            schedule_task(
+                "Liked Songs Syncer (full)",
+                config.LikedSongsSync.full_sync_interval,
+                syncer.sync_playlist,
+            )
 
     if config.SkipLikedSongs.enabled:
-        thread = schedule_task(
+        schedule_task(
             "Liked Songs Skipper",
             config.SkipLikedSongs.interval,
             skip_if_liked,
         )
-        task_threads.append(thread)
 
     event = threading.Event()
     # Sleep the main thread until all tasks finish.

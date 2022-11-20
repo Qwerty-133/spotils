@@ -10,4 +10,5 @@ ignore = T000,  # Todo note found.
          ANN401,  # Missing return type annotation for public function
          W503,  # line break before binary operator
          P103,  # other string does contain unindexed parameters
+         D107, # Missing docstring in __init__
 exclude = spotils/dev/*
