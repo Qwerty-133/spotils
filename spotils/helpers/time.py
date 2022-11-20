@@ -1,7 +1,18 @@
 """Pretty printing time durations."""
 import datetime
+import re
+import typing as t
 
+import arrow
 from dateutil.relativedelta import relativedelta
+
+_DURATION_REGEX = re.compile(
+    r"((?P<weeks>\d+?) ?(weeks|week|W|w) ?)?"
+    r"((?P<days>\d+?) ?(days|day|D|d) ?)?"
+    r"((?P<hours>\d+?) ?(hours|hour|H|h) ?)?"
+    r"((?P<minutes>\d+?) ?(minutes|minute|M|m) ?)?"
+    r"((?P<seconds>\d+?) ?(seconds|second|S|s))?"
+)
 
 
 def _stringify_time_unit(value: int, unit: str) -> str:
@@ -111,3 +122,58 @@ def time_since(
     (e.g. 1 may include days but not hours).
     """
     return f"{time_between_now_and(past_datetime, precision, max_units)} ago"
+
+
+def parse_duration_string(duration: str) -> t.Optional[relativedelta]:
+    """
+    Convert a `duration` string to a relativedelta object.
+
+    The following symbols are supported for each unit of time:
+    - weeks: `w`, `W`, `week`, `weeks`
+    - days: `d`, `D`, `day`, `days`
+    - hours: `H`, `h`, `hour`, `hours`
+    - minutes: `M`, `m`, `minute`, `minutes`
+    - seconds: `S`, `s`, `second`, `seconds`
+    The units need to be provided in descending order of magnitude.
+    Return None if the `duration` string cannot be parsed according to
+    the symbols above.
+    """
+    match = _DURATION_REGEX.fullmatch(duration)
+    if not match:
+        return None
+
+    duration_dict = {
+        unit: int(amount)
+        for unit, amount in match.groupdict(default=0).items()
+    }
+    delta = relativedelta(**duration_dict)
+
+    return delta
+
+
+def relativedelta_to_timedelta(delta: relativedelta) -> datetime.timedelta:
+    """Convert a relativedelta object to a timedelta object."""
+    utcnow = arrow.utcnow()
+    return utcnow + delta - utcnow
+
+
+def parse_interval(interval: str) -> int:
+    """
+    Convert `interval` into seconds.
+
+    The following symbols are supported for each unit of time:
+    - weeks: `w`, `W`, `week`, `weeks`
+    - days: `d`, `D`, `day`, `days`
+    - hours: `H`, `h`, `hour`, `hours`
+    - minutes: `M`, `m`, `minute`, `minutes`
+    - seconds: `S`, `s`, `second`, `seconds`
+    The units need to be provided in descending order of magnitude.
+    Return None if the `interval` string cannot be parsed according to
+    the symbols above.
+    """
+    relativedelta = parse_duration_string(interval)
+    if relativedelta:
+        seconds = relativedelta_to_timedelta(relativedelta).total_seconds()
+        return int(seconds)
+    else:
+        raise ValueError(f"Invalid interval: {interval}")

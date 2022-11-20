@@ -53,3 +53,26 @@ class Spotify(JsonLoader):
     section = "spotify"
 
     liked_songs_playlist_id: str
+
+
+class LikedSongsSync(JsonLoader):
+    """Namespace for the LikedSongsSync config section."""
+
+    section = "tasks"
+    subsection = "liked_songs_sync"
+
+    enabled: bool
+    short_sync_enabled: bool
+    short_sync_interval: str
+    short_sync_limit: int
+    full_sync_interval: str
+
+
+class SkipLikedSongs(JsonLoader):
+    """Namespace for the SkipLikedSongs config section."""
+
+    section = "tasks"
+    subsection = "skip_liked_songs"
+
+    enabled: bool
+    interval: str

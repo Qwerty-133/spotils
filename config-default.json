@@ -1,5 +1,18 @@
 {
     "spotify": {
         "liked_songs_playlist_id": "playlist-id"
+    },
+    "tasks": {
+        "liked_songs_sync": {
+            "enabled": true,
+            "short_sync_enabled": true,
+            "short_sync_interval": "30s",
+            "short_sync_limit": 50,
+            "full_sync_interval": "1m"
+        },
+        "skip_liked_songs": {
+            "enabled": true,
+            "interval": "2s"
+        }
     }
 }
