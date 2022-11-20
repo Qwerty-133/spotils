@@ -1,7 +1,7 @@
 [flake8]
 docstring-convention = all
 import-order-style = pycharm
-application_import_names = spotify
+application_import_names = spotils
 max_doc_length = 72
 ignore = T000,  # Todo note found.
          D212,  # Multi-line docstring summary should start at the first line
