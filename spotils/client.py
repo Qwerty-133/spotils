@@ -7,7 +7,7 @@ import typing as t
 
 from spotipy import Spotify
 
-from spotils.models import Model, ModelableJSON, PlaybackState
+from spotils.models import Model, ModelableJSON, PlaybackState, RecentlyPlayed
 
 MT = t.TypeVar("MT", bound=Model)
 
@@ -37,3 +37,19 @@ class ModeledSpotify(Spotify):
         """Get information about user's current playback."""
         response_data = self._casted_response(super().current_playback())
         return self._optional_model(PlaybackState, response_data)
+
+    def current_user_recently_played(self, limit: int = 50) -> RecentlyPlayed:
+        """Get the current user's recently played tracks."""
+        response_data = self._casted_response(
+            super().current_user_recently_played(limit)
+        )
+        return RecentlyPlayed(response_data)
+
+    def current_user_saved_tracks_contains(
+        self, tracks: list[str]
+    ) -> list[bool]:
+        """Check if tracks are liked by the current user."""
+        response_data = self._casted_response(
+            super().current_user_saved_tracks_contains(tracks)
+        )
+        return t.cast(list[bool], response_data)

@@ -130,10 +130,43 @@ model_dataclass = dataclasses.dataclass(
 
 
 @model_dataclass
+class Album(Model):
+    """Abstracts albums returned by the API."""
+
+    name: str
+
+
+@model_dataclass
+class Artist(Model):
+    """Abstracts artists returned by the API."""
+
+    name: str
+
+
+@model_dataclass
 class Track(Model):
     """Abstracts tracks returned by the API."""
 
+    name: str
     id: str
+    album: Album
+    duration_ms: int
+    artists: tuple[Artist]
+
+    def formatted_duration(self) -> str:
+        """Format the track's duration into M:SS or H:MM:SS."""
+        mins, seconds = divmod(self.duration_ms / 1000, 60)
+        mins = int(mins)
+        seconds = round(seconds)
+
+        hrs, mins = divmod(mins, 60)
+        hrs = int(hrs)
+        mins = int(mins)
+
+        if hrs:
+            return f"{hrs}:{mins:02}:{seconds:02}"
+        else:
+            return f"{mins}:{seconds:02}"
 
 
 @model_dataclass
@@ -161,3 +194,18 @@ class PlaybackState(Model):
     currently_playing_type: str
     item: t.Optional[Track]
     context: t.Optional[Context]
+
+
+@model_dataclass
+class PlayedItem(Model):
+    """Abstracts played items returned by the API."""
+
+    track: Track
+    played_at: str
+
+
+@model_dataclass
+class RecentlyPlayed(Model):
+    """Abstracts recently played information returned by the API."""
+
+    items: tuple[PlayedItem]
