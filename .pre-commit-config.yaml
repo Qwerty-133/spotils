@@ -27,3 +27,11 @@ repos:
         language: system
         types: [python]
         require_serial: true
+  - repo: local
+    hooks:
+      - id: black
+        name: Black
+        entry: poetry run black
+        language: system
+        types: [python]
+        require_serial: true
