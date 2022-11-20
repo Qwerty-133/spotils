@@ -249,3 +249,11 @@ class PlaylistTracks(PagedModel):
     next: t.Optional[str]
     items: tuple[PlaylistItem]
     total: int
+
+
+@model_dataclass
+class PlaylistDetails(PagedModel):
+    """Abstracts playlist details returned by the API."""
+
+    tracks: PlaylistTracks
+    snapshot_id: str

@@ -6,6 +6,8 @@ import typing as t
 
 from spotils import config, instance
 from spotils.helpers.fetch_tracks import lazy_fetch_tracks
+from spotils.helpers.tracks_cache import PlaylistTracksCache, liked_songs_cache
+from spotils.models import Track
 
 
 class LikedSongsSyncer:
@@ -24,37 +26,38 @@ class LikedSongsSyncer:
         sync_lock is aquired during ongoing syncs.
         current_snapshot_id holds the latest snapshot id obtained after
         inserting a track.
-        playlist_songs and liked_songs hold track ids for the liked
-        songs playlist tracks and the actual liked songs respectively.
+        playlist_songs & liked_songs hold the current state of the
+        respective caches for use in the various methods that
+        manipulate the playlist.
+        They're only in use while syncing.
         """
         self.current_snapshot_id = None
         self.sync_lock = threading.Lock()
-        self.playlist_songs: list[str] = []
-        self.liked_songs: list[str] = []
-
-    def fetch_track_ids(
-        self,
-        playlist_id: t.Optional[str] = None,
-        limit: t.Optional[int] = None,
-    ) -> list[str]:
-        """
-        Fetch track ids of the given playlist.
-
-        Upto limit tracks are fetched and if no playlist id is
-        supplied, liked songs track ids are fetched.
-        """
-        return [track.id for track in lazy_fetch_tracks(playlist_id, limit)]
+        self.playlist_cache = PlaylistTracksCache(
+            config.Spotify.liked_songs_playlist_id
+        )
+        self.playlist_songs: list[Track] = []
+        self.liked_songs: list[Track] = []
 
     def populate_tracks(self, limit: t.Optional[int] = None) -> None:
         """
-        Populate the liked songs and liked songs playlist's track ids.
+        Populate the liked songs and liked songs caches.
 
-        Upto limit tracks are fetched.
+        A limit is supplied for short syncs, in which case the cache's
+        aren't updated.
         """
-        self.liked_songs = self.fetch_track_ids(limit=limit)
-        self.playlist_songs = self.fetch_track_ids(
-            config.Spotify.liked_songs_playlist_id, limit
-        )
+        if limit is None:
+            liked_songs_cache.sync()
+            self.playlist_cache.sync_if_not_fresh()
+            self.liked_songs = liked_songs_cache.tracks.copy()
+            self.playlist_songs = self.playlist_cache.tracks.copy()
+        else:
+            self.liked_songs = list(lazy_fetch_tracks(limit=limit))
+            self.playlist_songs = list(
+                lazy_fetch_tracks(
+                    config.Spotify.liked_songs_playlist_id, limit=limit
+                )
+            )
 
     @staticmethod
     def _get_corrected_opcodes(
@@ -94,10 +97,11 @@ class LikedSongsSyncer:
         insertion_position = p_start
 
         for chunk in itertools.zip_longest(*iterators, fillvalue=None):
-            tracks = list(filter(None, chunk))
+            track_ids = [track.id for track in chunk if track]
+
             self.current_snapshot_id = instance.playlist_add_items(
                 config.Spotify.liked_songs_playlist_id,
-                tracks,
+                track_ids,
                 insertion_position,
             )
             # FIXME: snapshot ids don't work when deleting subsequently
@@ -105,9 +109,7 @@ class LikedSongsSyncer:
             # indexes in that case. As such, we shouldn't use
             # snapshot ids in deletions.
             self.current_snapshot_id = None
-            insertion_position += len(tracks)
-
-        self.playlist_songs
+            insertion_position += len(track_ids)
 
         self.playlist_songs[p_start:p_start] = to_insert
 
@@ -125,7 +127,9 @@ class LikedSongsSyncer:
         for chunk in itertools.zip_longest(*iterators, fillvalue=None):
             data = []
             for ahead_by, track in enumerate(filter(None, chunk)):
-                data.append({"uri": track, "positions": [p_start + ahead_by]})
+                data.append(
+                    {"uri": track.id, "positions": [p_start + ahead_by]}
+                )
             instance.playlist_remove_specific_occurrences_of_items(
                 config.Spotify.liked_songs_playlist_id,
                 data,

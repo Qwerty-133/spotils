@@ -12,6 +12,7 @@ from spotils.models import (
     ModelableJSON,
     PagedModel,
     PlaybackState,
+    PlaylistDetails,
     PlaylistTracks,
     RecentlyPlayed,
     SavedTracks,
@@ -73,6 +74,17 @@ class ModeledSpotify(Spotify):
             self.playlist_items(playlist_id, additional_types=("track",))
         )
         return PlaylistTracks(response_data)
+
+    def playlist(self, playlist_id: str) -> PlaylistDetails:
+        """
+        Get playlist details by id.
+
+        Only track items are fetched.
+        """
+        response_data = self._casted_response(
+            super().playlist(playlist_id, additional_types=("track",))
+        )
+        return PlaylistDetails(response_data)
 
     def playlist_add_items(
         self,
