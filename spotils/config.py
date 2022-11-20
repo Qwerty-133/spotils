@@ -76,3 +76,12 @@ class SkipLikedSongs(JsonLoader):
 
     enabled: bool
     interval: str
+
+
+class Dev(JsonLoader):
+    """Namespace for the Dev config section."""
+
+    section = "dev"
+
+    reset_playlist_id: str
+    liked_songs_fetch_limit: int

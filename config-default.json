@@ -14,5 +14,9 @@
             "enabled": true,
             "interval": "2s"
         }
+    },
+    "dev": {
+        "reset_playlist_id": "playlist-id",
+        "liked_songs_fetch_limit": 50
     }
 }
