@@ -1,0 +1,6 @@
+[flake8]
+docstring-convention = all
+import-order-style = pycharm
+application_import_names = spotify
+max_doc_length = 72
+exclude =
