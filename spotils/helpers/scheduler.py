@@ -46,7 +46,10 @@ def schedule_task(
     The created thread is returned.
     """
     thread = threading.Thread(
-        target=loop_task, name=name, args=(interval, callback, *args)
+        target=loop_task,
+        name=name,
+        args=(interval, callback, *args),
+        daemon=True,
     )
     thread.start()
     return thread
@@ -86,5 +89,6 @@ def run_tasks() -> None:
         )
         task_threads.append(thread)
 
-    for thread in task_threads:
-        thread.join()
+    event = threading.Event()
+    # Sleep the main thread until all tasks finish.
+    event.wait()
