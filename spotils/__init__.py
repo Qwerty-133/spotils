@@ -1,5 +1,7 @@
 """Initialises the global instance & console and setups logging."""
+
 import logging
+from importlib.metadata import version
 
 import dotenv
 import spotipy
@@ -7,6 +9,8 @@ from rich.console import Console
 
 from spotils.client import ModeledSpotify
 from spotils.helpers.logging import InterceptHandler
+
+__version__ = version(__package__)
 
 dotenv.load_dotenv()
 
