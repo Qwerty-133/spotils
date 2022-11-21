@@ -23,7 +23,7 @@ repos:
     hooks:
       - id: flake8
         name: Flake8
-        entry: poetry run flake8
+        entry: python -m flake8
         language: system
         types: [python]
         require_serial: true
@@ -31,7 +31,7 @@ repos:
     hooks:
       - id: black
         name: Black
-        entry: poetry run black
+        entry: python -m black
         language: system
         types: [python]
         require_serial: true
