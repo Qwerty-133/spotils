@@ -11,4 +11,8 @@ ignore = T000,  # Todo note found.
          W503,  # line break before binary operator
          P103,  # other string does contain unindexed parameters
          D107, # Missing docstring in __init__
+per-file-ignores =
+    # First line should be in imperative mood; try rephrasing
+    spotils/cli.py:D401
+
 exclude = spotils/dev/*
