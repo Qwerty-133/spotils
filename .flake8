@@ -11,6 +11,10 @@ ignore = T000,  # Todo note found.
          W503,  # line break before binary operator
          P103,  # other string does contain unindexed parameters
          D107, # Missing docstring in __init__
+         D406, # Section name should end with a newline
+         D407, # Missing dashed underline after section
+         D413, # Missing blank line after last section
+         D105, # Missing docstring in magic method
 per-file-ignores =
     # First line should be in imperative mood; try rephrasing
     spotils/cli.py:D401

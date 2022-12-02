@@ -14,8 +14,7 @@ import dataclasses
 import typing as t
 from types import NoneType
 
-JSONSimpleVals = t.Union[str, bool, int, float, None]
-JSONVals = t.Union[JSONSimpleVals, list["JSONVals"], dict[str, "JSONVals"]]
+from spotils.type_aliases import JSONVals
 
 ModelableJSON = t.Mapping[str, JSONVals]
 
