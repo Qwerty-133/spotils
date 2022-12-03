@@ -3,6 +3,7 @@ import typing as t
 
 import click
 from click.shell_completion import CompletionItem
+from rich.pretty import Pretty
 
 from spotils import console
 from spotils.config import (
@@ -12,6 +13,7 @@ from spotils.config import (
     set_config_value,
     unset_config_key,
 )
+from spotils.helpers.nested_key_mapping import ConfigMapping
 from spotils.helpers.scheduler import run_tasks
 from spotils.type_aliases import JSONVals
 from spotils.utils.recently_played import print_recently_played_tracks
@@ -114,8 +116,48 @@ key_argument = click.argument(
 )
 
 
+def pretty_print(mapping: ConfigMapping) -> None:
+    """Pretty print a config mapping with rich."""
+    # We need to pass the internal dict to get the desired output.
+    console.print(Pretty(mapping.data, expand_all=True))
+
+
+def print_config(
+    ctx: click.Context, param: click.Parameter, value: str
+) -> None:
+    """Print the current config."""
+    if not value or ctx.resilient_parsing:
+        return
+    pretty_print(default_config_data)
+    ctx.exit()
+
+
+def print_overriden_config(
+    ctx: click.Context, param: click.Parameter, value: str
+) -> None:
+    """Print the default config."""
+    if not value or ctx.resilient_parsing:
+        return
+    pretty_print(local_config_data)
+    ctx.exit()
+
+
 @config.command()
 @key_argument
+@click.option(
+    "--all",
+    is_flag=True,
+    callback=print_config,
+    expose_value=False,
+    is_eager=True,
+)
+@click.option(
+    "--local",
+    is_flag=True,
+    callback=print_overriden_config,
+    expose_value=False,
+    is_eager=True,
+)
 def get(key: str) -> None:
     """
     Get the value of a config option.
