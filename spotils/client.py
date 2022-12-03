@@ -8,12 +8,14 @@ import typing as t
 from spotipy import Spotify
 
 from spotils.models import (
+    CurrentUser,
     Model,
     ModelableJSON,
     PagedModel,
     PlaybackState,
     PlaylistDetails,
     PlaylistTracks,
+    Playlists,
     RecentlyPlayed,
     SavedTracks,
 )
@@ -24,6 +26,16 @@ PMT = t.TypeVar("PMT", bound=PagedModel)
 
 class ModeledSpotify(Spotify):
     """A wrapper to spotipy.Spotify which returns data as Models."""
+
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        """
+        Initialize the client.
+
+        Forwards args and kwargs to the super class, and initializes
+        an attribute for storing cached user details.
+        """
+        super().__init__(*args, **kwargs)
+        self.current_user_details: t.Optional[CurrentUser] = None
 
     # TODO: Override other methods for type-hinting arguments.
     @staticmethod
@@ -110,3 +122,20 @@ class ModeledSpotify(Spotify):
             super().current_user_saved_tracks_contains(tracks)
         )
         return t.cast(list[bool], response_data)
+
+    def current_user_playlists(self) -> Playlists:
+        """Get a list of the playlists of the current user."""
+        response_data = self._casted_response(super().current_user_playlists())
+        return Playlists(response_data)
+
+    def current_user(self) -> CurrentUser:
+        """
+        Get detailed profile information about the current user.
+
+        The information is cached.
+        """
+        if self.current_user_details is None:
+            response_data = self._casted_response(super().current_user())
+            self.current_user_details = CurrentUser(response_data)
+
+        return self.current_user_details

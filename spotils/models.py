@@ -256,3 +256,43 @@ class PlaylistDetails(PagedModel):
 
     tracks: PlaylistTracks
     snapshot_id: str
+
+
+@model_dataclass
+class CurrentUser(Model):
+    """Abstracts current user information returned by the API."""
+
+    id: str
+
+
+@model_dataclass
+class PlaylistOwner(Model):
+    """Abstracts playlist owner information returned by the API."""
+
+    id: str
+
+
+@model_dataclass
+class SimplePlaylistItem(Model):
+    """Abstracts simple playlist items returned by the API."""
+
+    total: int
+
+
+@model_dataclass
+class SimplePlaylist(Model):
+    """Abstracts simple playlists returned by the API."""
+
+    name: str
+    tracks: SimplePlaylistItem
+    id: str
+    owner: t.Optional[PlaylistOwner]
+    description: t.Optional[str]
+
+
+@model_dataclass
+class Playlists(PagedModel):
+    """Abstracts playlists returned by the API."""
+
+    next: t.Optional[str]
+    items: tuple[SimplePlaylist]
