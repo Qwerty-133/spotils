@@ -38,18 +38,29 @@ def validate_config_key(
     key: str,
 ) -> str:
     """Validate that the given key exists in the default config."""
-    if key in default_config_data:
+    if key not in default_config_data:
+        raise click.BadParameter(f"'{key}' is not a valid config key.")
+
+    return key
+
+
+def validate_config_atomic_key(
+    ctx: click.Context, param: click.Parameter, key: str
+) -> str:
+    """Validate the given key and ensure it's not a section."""
+    validate_config_key(ctx, param, key)
+    if isinstance(default_config_data[key], t.Mapping):
+        raise click.BadParameter(f"'{key}' is a section.")
+    else:
         return key
 
-    raise click.BadParameter(f"'{key}' is not a valid config key.")
 
-
-def validate_local_config_key(
+def validate_local_config_atomic_key(
     ctx: click.Context, param: click.Parameter, key: str
 ) -> str:
     """Validate that the given key exists in the local config."""
     # We need to ensure it's a valid key first.
-    validate_config_key(ctx, param, key)
+    validate_config_atomic_key(ctx, param, key)
     if key in local_config_data:
         return key
 
@@ -74,10 +85,18 @@ def parse_config_value(
 
 
 def complete_keys(
-    ctx: click.Context, args: t.List[str], incomplete: str
+    ctx: click.Context,
+    args: t.List[str],
+    incomplete: str,
+    config: ConfigMapping = default_config_data,
 ) -> list[CompletionItem]:
-    """Complete the key typed so far."""
-    to_parse: list[tuple[str, t.Mapping]] = [("", default_config_data)]
+    """
+    Complete the key typed so far.
+
+    The keys are pulled from the config argument.
+    By default, config points to the default config.
+    """
+    to_parse: list[tuple[str, t.Mapping]] = [("", config)]
     available_keys: list[str] = []
 
     while to_parse:
@@ -103,17 +122,18 @@ def complete_keys(
     ]
 
 
+def complete_local_keys(
+    ctx: click.Context,
+    args: t.List[str],
+    incomplete: str,
+) -> list[CompletionItem]:
+    """Complete the key typed so far from the local config."""
+    return complete_keys(ctx, args, incomplete, local_config_data)
+
+
 @app.group()
 def config() -> None:
     """Change/Read the application's config."""
-
-
-key_argument = click.argument(
-    "key",
-    type=str,
-    callback=validate_config_key,
-    shell_complete=complete_keys,
-)
 
 
 def pretty_print(mapping: ConfigMapping) -> None:
@@ -143,7 +163,12 @@ def print_overriden_config(
 
 
 @config.command()
-@key_argument
+@click.argument(
+    "key",
+    type=str,
+    callback=validate_config_key,
+    shell_complete=complete_keys,
+)
 @click.option(
     "--all",
     is_flag=True,
@@ -168,7 +193,12 @@ def get(key: str) -> None:
 
 
 @config.command()
-@key_argument
+@click.argument(
+    "key",
+    type=str,
+    callback=validate_config_atomic_key,
+    shell_complete=complete_keys,
+)
 @click.argument(
     "value",
     callback=parse_config_value,
@@ -183,7 +213,12 @@ def set(key: str, value: JSONVals) -> None:
 
 
 @config.command()
-@key_argument
+@click.argument(
+    "key",
+    type=str,
+    callback=validate_local_config_atomic_key,
+    shell_complete=complete_local_keys,
+)
 def unset(key: str) -> None:
     """
     Unset a config value.
