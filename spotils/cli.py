@@ -2,6 +2,7 @@
 import typing as t
 
 import click
+from click.shell_completion import CompletionItem
 
 from spotils import console
 from spotils.config import (
@@ -54,20 +55,50 @@ def validate_local_config_key(
 
 
 def parse_config_value(
-    ctx: click.Context, param: click.Parameter, kv: tuple[str, str]
-) -> tuple[str, JSONVals]:
+    ctx: click.Context, param: click.Parameter, value: str
+) -> JSONVals:
     """
-    Parse a JSON value according to the provided key.
+    Parse the user's value according to the provided key.
 
-    The key must also belong in the default config.
-    The return value is a tuple containing the key and the (converted)
-    value.
+    For example, if the key holds a boolean, then 1, yes, etc are
+    acceptable, according to Click's converting scheme.
+    Returns the converted value.
     """
-    validate_config_key(ctx, param, kv[0])
-    target_type = type(default_config_data[kv[0]])
+    key = ctx.params["key"]
+    target_type = type(default_config_data[key])
     converter = click.types.convert_type(target_type)
-    value = converter.convert(kv[1], param, ctx)
-    return (kv[0], value)
+    value = converter.convert(value, param, ctx)
+    return value
+
+
+def complete_keys(
+    ctx: click.Context, args: t.List[str], incomplete: str
+) -> list[CompletionItem]:
+    """Complete the key typed so far."""
+    to_parse: list[tuple[str, t.Mapping]] = [("", default_config_data)]
+    available_keys: list[str] = []
+
+    while to_parse:
+        current = to_parse.pop()
+        parent_key, value = current
+
+        if not isinstance(value, t.Mapping):
+            available_keys.append(parent_key)
+            continue
+
+        for subkey, subvalue in value.items():
+            new_key = f"{parent_key}.{subkey}" if parent_key else subkey
+
+            if isinstance(subvalue, t.Mapping):
+                to_parse.append((new_key, subvalue))
+            else:
+                available_keys.append(new_key)
+
+    return [
+        CompletionItem(key)
+        for key in available_keys
+        if key.startswith(incomplete)
+    ]
 
 
 @app.group()
@@ -75,12 +106,16 @@ def config() -> None:
     """Change/Read the application's config."""
 
 
-@config.command()
-@click.argument(
+key_argument = click.argument(
     "key",
     type=str,
     callback=validate_config_key,
+    shell_complete=complete_keys,
 )
+
+
+@config.command()
+@key_argument
 def get(key: str) -> None:
     """
     Get the value of a config option.
@@ -91,25 +126,22 @@ def get(key: str) -> None:
 
 
 @config.command()
+@key_argument
 @click.argument(
-    "key_and_value",
-    nargs=2,
+    "value",
     callback=parse_config_value,
 )
-def set(key_and_value: tuple[str, JSONVals]) -> None:
+def set(key: str, value: JSONVals) -> None:
     """
     Set the value of a config key.
 
     Example: spotils config set spotify.liked_songs_playlist_id 50xy7...
     """
-    set_config_value(*key_and_value)
+    set_config_value(key, value)
 
 
 @config.command()
-@click.argument(
-    "key",
-    callback=validate_local_config_key,
-)
+@key_argument
 def unset(key: str) -> None:
     """
     Unset a config value.
