@@ -1,5 +1,5 @@
 # Project-specific files
-config.json
+dump.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
