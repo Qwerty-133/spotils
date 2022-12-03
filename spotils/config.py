@@ -99,6 +99,16 @@ class SkipLikedSongs(JsonLoader):
     interval: str
 
 
+class CleanupPlaylists(JsonLoader):
+    """Namespace for the CleanupPlaylists config section."""
+
+    section = "tasks"
+    subsection = "cleanup_playlists"
+
+    enabled: bool
+    interval: str
+
+
 class Dev(JsonLoader):
     """Namespace for the Dev config section."""
 

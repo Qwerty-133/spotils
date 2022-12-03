@@ -13,6 +13,10 @@
         "skip_liked_songs": {
             "enabled": true,
             "interval": "2s"
+        },
+        "cleanup_playlists": {
+            "enabled": true,
+            "interval": "1h"
         }
     },
     "dev": {

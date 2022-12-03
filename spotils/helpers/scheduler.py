@@ -7,6 +7,7 @@ from schedule import Scheduler
 
 from spotils import config
 from spotils.helpers.time import parse_interval
+from spotils.utils.cleanup_playlists import run_cleanup
 from spotils.utils.liked_songs_sync import LikedSongsSyncer
 from spotils.utils.skip_liked import skip_if_liked
 
@@ -140,6 +141,13 @@ def run_tasks() -> None:
             "Liked Songs Skipper",
             config.SkipLikedSongs.interval,
             skip_if_liked,
+        )
+
+    if config.CleanupPlaylists.enabled:
+        schedule_task(
+            "Empty Playlists Cleaner",
+            config.CleanupPlaylists.interval,
+            run_cleanup,
         )
 
     event = threading.Event()
