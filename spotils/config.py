@@ -6,6 +6,7 @@ from importlib import resources
 import platformdirs
 from mergedeep import Strategy, merge
 
+import spotils
 from spotils.helpers.nested_key_mapping import ConfigMapping
 from spotils.type_aliases import JSONVals
 
@@ -13,7 +14,9 @@ DEFAULT_CONFIG_TRAVERSABLE = (
     resources.files(__package__) / "../config-default.json"
 )
 USER_CONFIG_PATH = (
-    platformdirs.user_config_path(appname=__package__, appauthor=False)
+    platformdirs.user_config_path(
+        appname=spotils.__app_name__, appauthor=False
+    )
     / "config.json"
 )
 
