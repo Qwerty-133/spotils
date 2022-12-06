@@ -6,14 +6,17 @@ from spotils import instance
 from spotils.models import Playlists, SimplePlaylist
 
 
-def lazy_fetch_playlists() -> t.Iterator[SimplePlaylist]:
+def fetch_playlists() -> list[SimplePlaylist]:
     """Fetch all the playlists of the current user."""
+    playlists: list[SimplePlaylist] = []
     chunk = instance.current_user_playlists()
-    yield from chunk.items
+    playlists.extend(chunk.items)
 
     while chunk.next:
         chunk = t.cast(Playlists, instance.next(chunk))
-        yield from chunk.items
+        playlists.extend(chunk.items)
+
+    return playlists
 
 
 def run_cleanup() -> None:
@@ -23,7 +26,7 @@ def run_cleanup() -> None:
     Doesn't remove playlists that are not owned by the current user or
     ones that have a non-empty description.
     """
-    for playlist in lazy_fetch_playlists():
+    for playlist in fetch_playlists():
         should_delete = (
             playlist.owner
             and playlist.owner.id == instance.current_user().id
