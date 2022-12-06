@@ -5,6 +5,11 @@ Subclasses spotipy.Spotify.
 """
 import typing as t
 
+import cachecontrol
+import requests
+import requests.adapters
+import spotipy
+import urllib3
 from spotipy import Spotify
 
 from spotils.models import (
@@ -22,6 +27,18 @@ from spotils.models import (
 
 MT = t.TypeVar("MT", bound=Model)
 PMT = t.TypeVar("PMT", bound=PagedModel)
+
+
+SCOPES = [
+    "playlist-read-private",
+    "playlist-read-collaborative",
+    "playlist-modify-private",
+    "playlist-modify-public",
+    "user-library-read",
+    "user-modify-playback-state",
+    "user-read-playback-state",
+    "user-read-recently-played",
+]
 
 
 class ModeledSpotify(Spotify):
@@ -139,3 +156,68 @@ class ModeledSpotify(Spotify):
             self.current_user_details = CurrentUser(response_data)
 
         return self.current_user_details
+
+
+class ResilientAdapter(cachecontrol.CacheControlAdapter):
+    """
+    An adapter which caches requests, and retries on errors.
+
+    This adapter adds a timeout to each request.
+    """
+
+    MAX_TIMEOUT = 2
+    DEFAULT_RETRY = urllib3.Retry(
+        total=5,
+        allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE"]),
+        backoff_factor=0.3,
+        status_forcelist=frozenset([500, 502, 503, 504]),
+    )
+
+    def __init__(
+        self,
+        *args: t.Any,
+        max_timeout: t.Optional[float] = None,
+        **kwargs: t.Any
+    ) -> None:
+        """
+        Initialise the adapter.
+
+        A max_timeout can be passed which applies to each request
+        which defaults to MAX_TIMEOUT.
+        If max_retries is not passed, it defaults to DEFAULT_RETRY.
+        """
+        kwargs.setdefault("max_retries", self.DEFAULT_RETRY)
+        super().__init__(*args, **kwargs)
+        self.max_timeout = max_timeout or self.MAX_TIMEOUT
+
+    def send(self, *args: t.Any, **kwargs: t.Any) -> requests.Response:
+        """
+        Send a request.
+
+        If no timeout is passed, apply the default timeout.
+        """
+        kwargs.setdefault("timeout", self.max_timeout)
+        return super().send(*args, **kwargs)
+
+
+global_session = requests.Session()
+adapter = ResilientAdapter()
+global_session.mount("http://", adapter)
+global_session.mount("https://", adapter)
+
+
+def generate_global_instance() -> ModeledSpotify:
+    """
+    Get an appropriate instance of ModeledSpotify.
+
+    This instance is used throughout the application.
+    """
+    scopes = ",".join(SCOPES)
+
+    # TODO: Let users configure whether the browser should be opened
+    return ModeledSpotify(
+        auth_manager=spotipy.SpotifyOAuth(
+            scope=scopes, requests_session=global_session
+        ),
+        requests_session=global_session,
+    )
