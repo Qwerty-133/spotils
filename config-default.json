@@ -21,6 +21,11 @@
     },
     "dev": {
         "reset_playlist_id": "playlist-id",
-        "liked_songs_fetch_limit": 50
+        "liked_songs_fetch_limit": 50,
+        "log": {
+            "rotation": "1d",
+            "level": "INFO",
+            "retention": 3
+        }
     }
 }

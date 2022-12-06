@@ -3,22 +3,16 @@ import json
 import os
 from importlib import resources
 
-import platformdirs
 from mergedeep import Strategy, merge
 
-import spotils
 from spotils.helpers.nested_key_mapping import ConfigMapping
+from spotils.meta import APPLICATION_PATHS
 from spotils.type_aliases import JSONVals
 
 DEFAULT_CONFIG_TRAVERSABLE = (
     resources.files(__package__) / "../config-default.json"
 )
-USER_CONFIG_PATH = (
-    platformdirs.user_config_path(
-        appname=spotils.__app_name__, appauthor=False
-    )
-    / "config.json"
-)
+USER_CONFIG_PATH = APPLICATION_PATHS.user_config_path / "config.json"
 
 default_config_data = ConfigMapping(
     json.loads(DEFAULT_CONFIG_TRAVERSABLE.read_text())
@@ -116,6 +110,17 @@ class Dev(JsonLoader):
 
     reset_playlist_id: str
     liked_songs_fetch_limit: int
+
+
+class Log(JsonLoader):
+    """Namespace for the Log config section."""
+
+    section = "dev"
+    subsection = "log"
+
+    level: str
+    retention: str
+    rotation: str
 
 
 def set_config_value(key_path: str, value: JSONVals) -> None:
