@@ -14,22 +14,33 @@ DEFAULT_CONFIG_TRAVERSABLE = (
 )
 USER_CONFIG_PATH = APPLICATION_PATHS.user_config_path / "config.json"
 
-default_config_data = ConfigMapping(
-    json.loads(DEFAULT_CONFIG_TRAVERSABLE.read_text())
-)
-config_data = ConfigMapping(default_config_data)
+default_config_data = ConfigMapping()
+config_data = ConfigMapping()
+local_config_data = ConfigMapping()
 
-try:
-    with USER_CONFIG_PATH.open() as f:
-        local_config_data = ConfigMapping(json.load(f))
-except FileNotFoundError:
-    os.makedirs(USER_CONFIG_PATH.parent, exist_ok=True)
-    with USER_CONFIG_PATH.open("w") as f:
-        json.dump({}, f)
 
-    local_config_data = ConfigMapping()
-else:
-    merge(config_data, local_config_data, strategy=Strategy.TYPESAFE_REPLACE)
+def load_config_data() -> None:
+    """
+    Read the default and user config files and merge them.
+
+    The raw data stores in this module are updated.
+    """
+    default_config_data.update(
+        json.loads(DEFAULT_CONFIG_TRAVERSABLE.read_text())
+    )
+    config_data.update(default_config_data)
+
+    try:
+        with USER_CONFIG_PATH.open() as f:
+            local_config_data.update(json.load(f))
+    except FileNotFoundError:
+        os.makedirs(USER_CONFIG_PATH.parent, exist_ok=True)
+        with USER_CONFIG_PATH.open("w") as f:
+            json.dump({}, f)
+    else:
+        merge(
+            config_data, local_config_data, strategy=Strategy.TYPESAFE_REPLACE
+        )
 
 
 class JsonLoaderMeta(type):

@@ -4,10 +4,12 @@ import dotenv
 from rich.console import Console
 
 from spotils.client import generate_global_instance
+from spotils.config import load_config_data
 from spotils.helpers.logging import setup_logging
 from spotils.meta import __app_name__, __version__
 
 setup_logging()
+load_config_data()
 
 dotenv.load_dotenv()
 console = Console()
