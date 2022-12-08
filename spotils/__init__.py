@@ -8,8 +8,8 @@ from spotils.config import load_config_data
 from spotils.helpers.logging import setup_logging
 from spotils.meta import __app_name__, __version__
 
-setup_logging()
 load_config_data()
+setup_logging()
 
 dotenv.load_dotenv()
 console = Console()
