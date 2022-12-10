@@ -32,7 +32,6 @@ def run_cleanup() -> None:
             and playlist.owner.id == instance.current_user().id
             and playlist.name.startswith("My Playlist #")
             and playlist.tracks.total == 0
-            and playlist.description is not None
             and playlist.description == ""
         )
         if should_delete:
