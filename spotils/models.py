@@ -11,6 +11,7 @@ Models which represent JSON values from API values.
 Models only hold data which is used in this application.
 """
 import dataclasses
+import json
 import typing as t
 from types import NoneType
 
@@ -296,3 +297,18 @@ class Playlists(PagedModel):
 
     next: t.Optional[str]
     items: tuple[SimplePlaylist]
+
+
+class ModelEncoder(json.JSONEncoder):
+    """A JSONEncoder which also handles Spotify data models."""
+
+    def default(self, obj: t.Any) -> t.Any:
+        """
+        Convert the object to valid JSON.
+
+        If the object is a model, obtain a dict via dataclasses.asdict
+        Otherwise, delegate to the parent encoder.
+        """
+        if isinstance(obj, Model):
+            return dataclasses.asdict(obj)
+        return super().default(obj)
